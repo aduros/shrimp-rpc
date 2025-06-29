@@ -32,7 +32,7 @@ export function createPostMessageClient<T extends Service = never>(
     self.addEventListener('message', listener)
     return {
       send(payload) {
-        target.postMessage(payload, target.origin)
+        target.postMessage(payload, '*')
       },
       stop() {
         self.removeEventListener('message', listener)
