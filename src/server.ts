@@ -83,6 +83,9 @@ export async function handle<T extends Service, Context>(
           error: {
             code: -32601,
             message: 'Method not found',
+            data: {
+              method: message.method,
+            },
           },
         }
       }

@@ -289,6 +289,9 @@ describe('errors', () => {
       error: {
         code: -32601,
         message: 'Method not found',
+        data: {
+          method: 'nonExistentMethod',
+        },
       },
     })
   })
