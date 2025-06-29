@@ -20,7 +20,7 @@ type TestService = Service<{
 type NotAMethodError = Service<{ notAMethod: number }>
 
 // @ts-expect-error Invalid params
-type NotAMethodError = Service<{ invalidParams(x: number, y: number): void }>
+type NotAMethodError2 = Service<{ invalidParams(x: number, y: number): void }>
 
 const client = createPostMessageClient<TestService>(window)
 client.stop()

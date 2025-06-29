@@ -1,5 +1,5 @@
 import type { Payload, Service } from '../src'
-import { RPCError, type Client } from '../src'
+import { type Client, RPCError } from '../src'
 import { createClient } from '../src/client'
 
 type TestService = Service<{

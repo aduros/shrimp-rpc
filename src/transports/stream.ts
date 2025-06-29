@@ -1,4 +1,4 @@
-import { createClient, type Client } from '../client'
+import { type Client, createClient } from '../client'
 import type { Payload } from '../jsonrpc'
 import type { Handler, Server } from '../server'
 import { handle } from '../server'

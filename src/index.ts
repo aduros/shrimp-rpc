@@ -1,21 +1,17 @@
+export type { Batch, Client, Transport } from './client'
+export { createClient } from './client'
+export { RPCError } from './error'
 export type {
-  Id,
-  RequestMessage,
-  ResultMessage,
   ErrorMessage,
+  Id,
   Message,
   Payload,
+  RequestMessage,
+  ResultMessage,
 } from './jsonrpc'
-
-export { RPCError } from './error'
-
-export type { Service } from './service'
-
-export type { Client, Batch, Transport } from './client'
-export { createClient } from './client'
-
 export type { Handler, Server } from './server'
 export { handle } from './server'
+export type { Service } from './service'
 
 export {
   createBroadcastChannelClient,
