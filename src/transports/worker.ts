@@ -24,7 +24,7 @@ import {
  * ```
  */
 export const createWorkerClient: <T extends Service = never>(
-  worker: Worker,
+  worker: Worker | Window,
 ) => Client<T> = createChannelClient
 
 /**
@@ -48,6 +48,6 @@ export const createWorkerClient: <T extends Service = never>(
 export const createWorkerServer = createChannelServer_ReplyToTarget as <
   T extends Service = never,
 >(
-  worker: Worker,
+  worker: Worker | Window,
   handler: Handler<T> | ((event: MessageEvent<Payload>) => Handler<T>),
 ) => Server

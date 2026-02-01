@@ -5,7 +5,7 @@ import type { Service } from '../service'
 
 import {
   createChannelClient,
-  createChannelServer_ReplyToSource,
+  createChannelServer_ReplyToTarget,
 } from './common'
 
 /**
@@ -46,7 +46,7 @@ export const createMessagePortClient: <T extends Service = never>(
  * });
  * ```
  */
-export const createMessagePortServer = createChannelServer_ReplyToSource as <
+export const createMessagePortServer = createChannelServer_ReplyToTarget as <
   T extends Service = never,
 >(
   messagePort: MessagePort,

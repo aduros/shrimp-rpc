@@ -60,14 +60,14 @@ export function createServiceWorkerServer<T extends Service = never>(
   function listener(event: MessageEvent<Payload>) {
     void handle(event.data, handler, event).then((reply) => {
       if (reply) {
-        navigator.serviceWorker.controller!.postMessage(reply)
+        event.source!.postMessage(reply)
       }
     })
   }
-  navigator.serviceWorker.addEventListener('message', listener)
+  self.addEventListener('message', listener)
   return {
     stop() {
-      navigator.serviceWorker.removeEventListener('message', listener)
+      self.removeEventListener('message', listener)
     },
   }
 }
