@@ -288,7 +288,7 @@ console.log('Result from worker:', result) // 8
 // worker.js
 import { createWorkerServer } from 'shrimp-rpc'
 
-const server = createPostMessageServer<MyService>(self, {
+const server = createWorkerServer<MyService>(self, {
   add({ x, y }) {
     return x + y
   }
@@ -307,7 +307,7 @@ const server = createWorkerServer<MyService>(worker, {
 })
 
 // worker.js
-const client = createPostMessageClient<MyService>(self)
+const client = createWorkerClient<MyService>(self)
 await client.call('add', { x: 1, y: 2 }) // 3
 ```
 
