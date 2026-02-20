@@ -1,24 +1,24 @@
 import { type Client, createClient } from '../client'
-import type { Payload } from '../jsonrpc'
+import type { RequestPayload, ResponsePayload } from '../jsonrpc'
 import type { Handler, Server } from '../server'
-import { handle } from '../server'
+import { handleAndSendResponse } from '../server'
 import type { Service } from '../service'
 
 export type ChannelLike = {
-  postMessage(payload: Payload): void
+  postMessage(payload: RequestPayload | ResponsePayload): void
   addEventListener(
     event: 'message',
-    listener: (event: MessageEvent<Payload>) => void,
+    listener: (event: MessageEvent) => void,
   ): void
   removeEventListener(
     event: 'message',
-    listener: (event: MessageEvent<Payload>) => void,
+    listener: (event: MessageEvent) => void,
   ): void
 }
 
 export function createChannelClient(target: ChannelLike): Client<Service> {
   return createClient((receive) => {
-    function listener(event: MessageEvent<Payload>) {
+    function listener(event: MessageEvent<ResponsePayload>) {
       receive(event.data)
     }
     target.addEventListener('message', listener)
@@ -38,13 +38,11 @@ export function createChannelServer_ReplyToSource<
   T extends Service,
 >(
   target: Target,
-  handler: Handler<T> | ((event: MessageEvent<Payload>) => Handler<T>),
+  handler: Handler<T> | ((event: MessageEvent<RequestPayload>) => Handler<T>),
 ): Server {
-  function listener(event: MessageEvent<Payload>) {
-    void handle(event.data, handler, event).then((reply) => {
-      if (reply) {
-        event.source!.postMessage(reply, { targetOrigin: event.origin })
-      }
+  function listener(event: MessageEvent<RequestPayload>) {
+    void handleAndSendResponse(event.data, handler, event, (response) => {
+      event.source!.postMessage(response, { targetOrigin: event.origin })
     })
   }
   target.addEventListener('message', listener)
@@ -60,13 +58,11 @@ export function createChannelServer_ReplyToTarget<
   T extends Service,
 >(
   target: Target,
-  handler: Handler<T> | ((event: MessageEvent<Payload>) => Handler<T>),
+  handler: Handler<T> | ((event: MessageEvent<RequestPayload>) => Handler<T>),
 ): Server {
-  function listener(event: MessageEvent<Payload>) {
-    void handle(event.data, handler, event).then((reply) => {
-      if (reply) {
-        target.postMessage(reply)
-      }
+  function listener(event: MessageEvent<RequestPayload>) {
+    void handleAndSendResponse(event.data, handler, event, (response) => {
+      target.postMessage(response)
     })
   }
   target.addEventListener('message', listener)
@@ -94,12 +90,12 @@ export function createSocketClient<T extends Service>(
 ): Client<T> {
   return createClient((receive) => {
     function listener(event: MessageEvent<string>) {
-      receive(JSON.parse(event.data) as Payload)
+      receive(JSON.parse(event.data) as ResponsePayload)
     }
     target.addEventListener('message', listener)
     return {
-      send(payload) {
-        target.send(JSON.stringify(payload))
+      send(request) {
+        target.send(JSON.stringify(request))
       },
       stop() {
         target.removeEventListener('message', listener)
@@ -116,10 +112,8 @@ export function createSocketServer<
   handler: Handler<T> | ((event: MessageEvent<string>) => Handler<T>),
 ): Server {
   function listener(event: MessageEvent<string>) {
-    void handle(event.data, handler, event).then((reply) => {
-      if (reply) {
-        target.send(JSON.stringify(reply))
-      }
+    void handleAndSendResponse(event.data, handler, event, (response) => {
+      target.send(JSON.stringify(response))
     })
   }
   target.addEventListener('message', listener)

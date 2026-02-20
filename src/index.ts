@@ -4,9 +4,10 @@ export { RPCError } from './error'
 export type {
   ErrorMessage,
   Id,
-  Message,
-  Payload,
   RequestMessage,
+  RequestPayload,
+  ResponseMessage,
+  ResponsePayload,
   ResultMessage,
 } from './jsonrpc'
 export type { Handler, Server } from './server'

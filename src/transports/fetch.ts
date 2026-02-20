@@ -25,7 +25,7 @@ export function createFetchClient<T extends Service = never>(
   const abortController = new AbortController()
 
   return createClient((receive) => ({
-    async send(payload) {
+    async send(request) {
       const res = await fetch(url, {
         method: 'POST',
         ...fetchOpts,
@@ -36,7 +36,7 @@ export function createFetchClient<T extends Service = never>(
           ...fetchOpts?.headers,
         },
 
-        body: JSON.stringify(payload),
+        body: JSON.stringify(request),
         signal: abortController.signal,
       })
 

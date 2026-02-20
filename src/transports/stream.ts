@@ -1,7 +1,7 @@
 import { type Client, createClient } from '../client'
-import type { Payload } from '../jsonrpc'
+import { ResponsePayload } from '../jsonrpc'
 import type { Handler, Server } from '../server'
-import { handle } from '../server'
+import { handleAndSendResponse } from '../server'
 import type { Service } from '../service'
 
 /**
@@ -35,7 +35,7 @@ export function createNodeStreamClient<T extends Service>(
       buffer = lines.pop() ?? ''
 
       for (const line of lines) {
-        receive(JSON.parse(line) as Payload)
+        receive(JSON.parse(line) as ResponsePayload)
       }
     }
 
@@ -83,10 +83,8 @@ export function createNodeStreamServer<T extends Service>(
     buffer = lines.pop() ?? ''
 
     for (const line of lines) {
-      void handle(line, handler).then((reply) => {
-        if (reply) {
-          output.write(JSON.stringify(reply) + '\n')
-        }
+      void handleAndSendResponse(line, handler, undefined, (response) => {
+        output.write(JSON.stringify(response) + '\n')
       })
     }
   }

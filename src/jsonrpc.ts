@@ -6,7 +6,7 @@ export const jsonrpc = '2.0'
 export type Id = string | number
 
 /**
- * JSON-RPC request message structure.
+ * JSON-RPC request message.
  */
 export type RequestMessage = {
   jsonrpc: typeof jsonrpc
@@ -40,12 +40,14 @@ export type ErrorMessage = {
   }
 }
 
-/**
- * Union of all JSON-RPC message types.
- */
-export type Message = RequestMessage | ResultMessage | ErrorMessage
+export type ResponseMessage = ResultMessage | ErrorMessage
 
 /**
- * RPC payload (single message or batch).
+ * Request payload (single message or batch).
  */
-export type Payload = Message | Message[]
+export type RequestPayload = RequestMessage | RequestMessage[]
+
+/**
+ * Response payload (single message or batch).
+ */
+export type ResponsePayload = ResponseMessage | ResponseMessage[]

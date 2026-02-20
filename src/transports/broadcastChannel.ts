@@ -1,5 +1,5 @@
 import type { Client } from '../client'
-import type { Payload } from '../jsonrpc'
+import type { RequestPayload } from '../jsonrpc'
 import type { Handler, Server } from '../server'
 import type { Service } from '../service'
 
@@ -49,5 +49,5 @@ export const createBroadcastChannelClient: <T extends Service = never>(
 export const createBroadcastChannelServer =
   createChannelServer_ReplyToTarget as <T extends Service = never>(
     broadcastChannel: BroadcastChannel,
-    handler: Handler<T> | ((event: MessageEvent<Payload>) => Handler<T>),
+    handler: Handler<T> | ((event: MessageEvent<RequestPayload>) => Handler<T>),
   ) => Server

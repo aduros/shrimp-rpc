@@ -1,5 +1,5 @@
 import { RPCError } from './error'
-import type { ErrorMessage, Message, Payload } from './jsonrpc'
+import type { ErrorMessage, RequestMessage, RequestPayload, ResponseMessage, ResponsePayload } from './jsonrpc'
 import { jsonrpc } from './jsonrpc'
 import type { Service } from './service'
 
@@ -24,40 +24,65 @@ export type Server = {
   stop(): void
 }
 
+function toErrorMessage(id: ErrorMessage['id'], error: unknown): ErrorMessage {
+  let errorMessage: string
+  let errorCode = 0
+  let errorData: unknown
+  if (error instanceof Error) {
+    errorMessage = error.message
+    if (error instanceof RPCError) {
+      errorCode = error.code
+      errorData = error.data
+    }
+  } else {
+    // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+    errorMessage = '' + error
+  }
+  return {
+    jsonrpc,
+    id,
+    error: {
+      message: errorMessage,
+      code: errorCode,
+      data: errorData,
+    },
+  }
+}
+
 /**
  * Processes incoming RPC requests and returns responses.
  *
  * @template T - The service interface defining available methods
- * @param payloadOrString - RPC payload or JSON string
+ * @param request - Request payload or JSON string
  * @param handler - Handler object with method implementations
  * @returns Response payload or undefined for notifications
  */
 export async function handle<T extends Service = never>(
-  payloadOrString: Payload | string,
+  request: RequestPayload | string,
   handler: Handler<T>,
-): Promise<Payload | undefined>
+): Promise<ResponsePayload | undefined>
 
 /**
  * Processes incoming RPC requests with context and returns responses.
  *
  * @template T - The service interface defining available methods
  * @template Context - Type of context passed to handler factory
- * @param payloadOrString - RPC payload or JSON string
+ * @param request - Request payload or JSON string
  * @param handler - Handler object or factory function that receives context
  * @param context - Context object passed to handler factory
  * @returns Response payload or undefined for notifications
  */
 export async function handle<T extends Service = never, Context = never>(
-  payloadOrString: Payload | string,
+  request: RequestPayload | string,
   handler: Handler<T> | ((context: Context) => Handler<T>),
   context: Context,
-): Promise<Payload | undefined>
+): Promise<ResponsePayload | undefined>
 
 export async function handle<T extends Service, Context>(
-  payloadOrString: Payload | string,
+  requestOrString: RequestPayload | string,
   handler: Handler<T> | ((context: Context) => Handler<T>),
   context?: Context,
-): Promise<Payload | undefined> {
+): Promise<ResponsePayload | undefined> {
   const invalidRequest: ErrorMessage = {
     jsonrpc,
     id: null,
@@ -67,7 +92,7 @@ export async function handle<T extends Service, Context>(
     },
   }
 
-  async function onMessage(message: Message): Promise<Message | undefined> {
+  async function onMessage(message: RequestMessage): Promise<ResponseMessage | undefined> {
     if (message?.jsonrpc !== '2.0') {
       return invalidRequest
     }
@@ -101,37 +126,16 @@ export async function handle<T extends Service, Context>(
         }
       } catch (error) {
         if (message.id != null) {
-          let errorMessage: string
-          let errorCode = 0
-          let errorData: unknown
-          if (error instanceof Error) {
-            errorMessage = error.message
-            if (error instanceof RPCError) {
-              errorCode = error.code
-              errorData = error.data
-            }
-          } else {
-            // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
-            errorMessage = '' + error
-          }
-          return {
-            jsonrpc,
-            id: message.id,
-            error: {
-              message: errorMessage,
-              code: errorCode,
-              data: errorData,
-            },
-          }
+          return toErrorMessage(message.id, error);
         }
       }
     }
   }
 
-  let payload: Payload
-  if (typeof payloadOrString === 'string') {
+  let request: RequestPayload
+  if (typeof requestOrString === 'string') {
     try {
-      payload = JSON.parse(payloadOrString) as Payload
+      request = JSON.parse(requestOrString) as RequestPayload
     } catch {
       return {
         jsonrpc,
@@ -143,20 +147,42 @@ export async function handle<T extends Service, Context>(
       }
     }
   } else {
-    payload = payloadOrString
+    request = requestOrString
   }
 
-  if (Array.isArray(payload)) {
-    if (!payload.length) {
+  if (Array.isArray(request)) {
+    if (!request.length) {
       return invalidRequest
     }
-    const responseBatch = (await Promise.all(payload.map(onMessage))).filter(
+    const responseBatch = (await Promise.all(request.map(onMessage))).filter(
       (responseMessage) => !!responseMessage,
     )
     if (responseBatch.length > 0) {
       return responseBatch
     }
   } else {
-    return onMessage(payload)
+    return onMessage(request)
+  }
+}
+
+/** Internal helper for correctly implementing servers. */
+export async function handleAndSendResponse<T extends Service, Context>(
+  request: RequestPayload | string,
+  handler: Handler<T> | ((context: Context) => Handler<T>),
+  context: Context,
+  sendResponse: (response: ResponsePayload) => void,
+) {
+  const response = await handle(request, handler, context);
+  if (response) {
+    try {
+      sendResponse(response);
+    } catch (error) {
+      // If there was an error during response sending (which may happen if result messages aren't
+      // serializable), propagate that error back to clients
+      const errorPayload = Array.isArray(response)
+        ? response.map(message => toErrorMessage(message.id, error))
+        : toErrorMessage(response.id, error)
+      sendResponse(errorPayload);
+    }
   }
 }

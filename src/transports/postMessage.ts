@@ -1,6 +1,6 @@
 import type { Client } from '../client'
 import { createClient } from '../client'
-import type { Payload } from '../jsonrpc'
+import { RequestPayload, ResponsePayload } from '../jsonrpc'
 import type { Handler, Server } from '../server'
 import type { Service } from '../service'
 
@@ -26,13 +26,13 @@ export function createPostMessageClient<T extends Service = never>(
   target: Window,
 ): Client<T> {
   return createClient((receive) => {
-    function listener(event: MessageEvent<Payload>) {
+    function listener(event: MessageEvent<ResponsePayload>) {
       receive(event.data)
     }
     self.addEventListener('message', listener)
     return {
-      send(payload) {
-        target.postMessage(payload, '*')
+      send(request) {
+        target.postMessage(request, '*')
       },
       stop() {
         self.removeEventListener('message', listener)
@@ -63,5 +63,5 @@ export const createPostMessageServer = createChannelServer_ReplyToSource as <
   T extends Service = never,
 >(
   source: Window,
-  handler: Handler<T> | ((event: MessageEvent<Payload>) => Handler<T>),
+  handler: Handler<T> | ((event: MessageEvent<RequestPayload>) => Handler<T>),
 ) => Server

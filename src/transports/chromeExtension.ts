@@ -1,6 +1,6 @@
 import type { Client } from '../client'
 import { createClient } from '../client'
-import type { Payload } from '../jsonrpc'
+import type { RequestPayload, ResponsePayload } from '../jsonrpc'
 import type { Handler, Server } from '../server'
 import { handle } from '../server'
 import type { Service } from '../service'
@@ -25,13 +25,13 @@ export function createChromeExtensionClient<T extends Service = never>(
   extensionId?: string,
 ): Client<T> {
   return createClient((receive) => ({
-    async send(payload) {
-      const reply: Payload = await chrome.runtime.sendMessage(
+    async send(request) {
+      const response: ResponsePayload | undefined = await chrome.runtime.sendMessage(
         extensionId,
-        payload,
+        request,
       )
-      if (reply) {
-        receive(reply)
+      if (response) {
+        receive(response)
       }
     },
     stop() {
@@ -60,10 +60,10 @@ export function createChromeExtensionContentScriptClient<
   T extends Service = never,
 >(tabId: number): Client<T> {
   return createClient((receive) => ({
-    async send(payload) {
-      const reply: Payload = await chrome.tabs.sendMessage(tabId, payload)
-      if (reply) {
-        receive(reply)
+    async send(request) {
+      const response: ResponsePayload | undefined = await chrome.tabs.sendMessage(tabId, request)
+      if (response) {
+        receive(response)
       }
     },
     stop() {
@@ -96,11 +96,11 @@ export function createChromeExtensionServer<T extends Service = never>(
   handler: Handler<T> | ((sender: chrome.runtime.MessageSender) => Handler<T>),
 ): Server {
   function listener(
-    payload: Payload,
+    request: RequestPayload,
     sender: chrome.runtime.MessageSender,
-    sendResponse: (response: Payload | undefined) => void,
+    sendResponse: (response: ResponsePayload | undefined) => void,
   ) {
-    void handle(payload, handler, sender).then(sendResponse)
+    void handle(request, handler, sender).then(sendResponse)
     return true
   }
   onMessage.addListener(listener)

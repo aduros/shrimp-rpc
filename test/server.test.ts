@@ -1,5 +1,6 @@
-import type { Handler, Message, Service } from '../src'
+import type { Handler, RequestMessage, Service } from '../src'
 import { handle, RPCError } from '../src'
+import { handleAndSendResponse } from '../src/server'
 
 type TestService = Service<{
   add(param: { x: number; y: number }): number
@@ -325,7 +326,7 @@ describe('errors', () => {
         jsonrpc: '2.0',
         id: 1,
         params: [1, 2],
-      } as Message,
+      } as RequestMessage,
       mockHandler,
       undefined,
     )
@@ -506,7 +507,7 @@ describe('batching', () => {
 
   it('handles invalid batch requests', async () => {
     const reply = await handle(
-      [1, 2, 3] as unknown as Message[],
+      [1, 2, 3] as unknown as RequestMessage[],
       mockHandler,
       undefined,
     )
@@ -537,5 +538,56 @@ describe('batching', () => {
         },
       },
     ])
+  })
+})
+
+describe('handleAndSendResponse', () => {
+  it('handles normal cases', async () => {
+    const mockSendResponse = jest.fn()
+    await handleAndSendResponse(
+      {
+        jsonrpc: '2.0',
+        id: 'test-id',
+        method: 'add',
+        params: { x: 1, y: 2 },
+      },
+      mockHandler,
+      undefined,
+      mockSendResponse,
+    )
+    expect(mockSendResponse).toHaveBeenCalledTimes(1)
+    expect(mockSendResponse).toHaveBeenCalledWith({
+      id: 'test-id',
+      jsonrpc: '2.0',
+      result: 3,
+    })
+  })
+
+  it('handles serialization errors in response sending', async () => {
+    const mockSendResponse = jest.fn((x) => {
+      if (x.result) {
+        throw new Error('Something horrible happened')
+      }
+    })
+    await handleAndSendResponse(
+      {
+        jsonrpc: '2.0',
+        id: 'test-id',
+        method: 'add',
+        params: { x: 1, y: 2 },
+      },
+      mockHandler,
+      undefined,
+      mockSendResponse,
+    )
+    expect(mockSendResponse).toHaveBeenCalledTimes(2)
+    expect(mockSendResponse).toHaveBeenLastCalledWith({
+      id: 'test-id',
+      jsonrpc: '2.0',
+      error: {
+        code: 0,
+        message: 'Something horrible happened',
+      }
+    })
   })
 })

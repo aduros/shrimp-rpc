@@ -1,5 +1,5 @@
 import { RPCError } from './error'
-import type { Message, Payload, RequestMessage } from './jsonrpc'
+import type { RequestMessage, RequestPayload, ResponseMessage, ResponsePayload } from './jsonrpc'
 import { jsonrpc } from './jsonrpc'
 import type { Service } from './service'
 
@@ -66,18 +66,18 @@ export type Batch<T extends Service> = Pick<Client<T>, 'call' | 'notify'> & {
 }
 
 /**
- * Transport layer abstraction for RPC communication.
+ * Client transport layer abstraction for RPC communication.
  *
- * @param receive - Callback function to handle incoming payloads
+ * @param receive - Callback function to handle incoming responses
  * @returns Object with send function and stop function
  */
-export type Transport = (receive: (payload: Payload) => void) => {
+export type Transport = (receive: (response: ResponsePayload) => void) => {
   /**
-   * Sends a payload on this transport.
+   * Sends a request on this transport.
    *
-   * @returns Promise that resolves when the outgoing payload has been sent.
+   * @returns Promise that resolves when the outgoing request has been sent.
    */
-  send: (payload: Payload) => void | Promise<void>
+  send: (request: RequestPayload) => void | Promise<void>
 
   /** Cleans up any listeners. */
   stop: () => void
@@ -99,7 +99,7 @@ export function createClient<T extends Service>(
     { resolve: (result: any) => void; reject: (error: Error) => void }
   >()
 
-  function onMessage(message: Message) {
+  function onMessage(message: ResponseMessage) {
     if ('result' in message) {
       const id = message.id
       const result = message.result
@@ -124,7 +124,7 @@ export function createClient<T extends Service>(
   async function callImpl(
     method: RequestMessage['method'],
     params: RequestMessage['params'],
-    send: (message: Message) => void | Promise<void>,
+    send: (message: RequestMessage) => void | Promise<void>,
   ) {
     const id = crypto.randomUUID()
 
@@ -150,7 +150,7 @@ export function createClient<T extends Service>(
   async function notifyImpl(
     method: RequestMessage['method'],
     params: RequestMessage['params'],
-    send: (message: Message) => void | Promise<void>,
+    send: (message: RequestMessage) => void | Promise<void>,
   ) {
     await send({
       jsonrpc,
@@ -160,11 +160,11 @@ export function createClient<T extends Service>(
   }
 
   // Called by the transport when a reply is received
-  function receive(payload: Payload) {
-    if (Array.isArray(payload)) {
-      payload.forEach(onMessage)
+  function receive(response: ResponsePayload) {
+    if (Array.isArray(response)) {
+      response.forEach(onMessage)
     } else {
-      onMessage(payload)
+      onMessage(response)
     }
   }
 
@@ -180,8 +180,8 @@ export function createClient<T extends Service>(
     },
 
     createBatch() {
-      const batch: Message[] = []
-      function addToBatch(message: Message) {
+      const batch: RequestMessage[] = []
+      function addToBatch(message: RequestMessage) {
         batch.push(message)
       }
 

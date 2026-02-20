@@ -1,4 +1,4 @@
-import type { Payload, Service } from '../src'
+import type { ResponsePayload, Service } from '../src'
 import { type Client, RPCError } from '../src'
 import { createClient } from '../src/client'
 
@@ -7,7 +7,7 @@ type TestService = Service<{
   addArray(params: [x: number, y: number]): number
 }>
 
-let mockReceive!: (payload: Payload) => void
+let mockReceive!: (response: ResponsePayload) => void
 const mockSend = jest.fn()
 const mockStop = jest.fn()
 

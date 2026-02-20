@@ -1,8 +1,8 @@
 import type { Client } from '../client'
 import { createClient } from '../client'
-import type { Payload } from '../jsonrpc'
+import { RequestPayload, ResponsePayload } from '../jsonrpc'
 import type { Handler, Server } from '../server'
-import { handle } from '../server'
+import { handleAndSendResponse } from '../server'
 import type { Service } from '../service'
 
 /**
@@ -23,13 +23,13 @@ export function createServiceWorkerClient<
   T extends Service = never,
 >(): Client<T> {
   return createClient((receive) => {
-    function listener(event: MessageEvent<Payload>) {
+    function listener(event: MessageEvent<ResponsePayload>) {
       receive(event.data)
     }
     self.addEventListener('message', listener)
     return {
-      send(payload) {
-        navigator.serviceWorker.controller!.postMessage(payload)
+      send(request) {
+        navigator.serviceWorker.controller!.postMessage(request)
       },
       stop() {
         self.removeEventListener('message', listener)
@@ -57,11 +57,9 @@ export function createServiceWorkerClient<
 export function createServiceWorkerServer<T extends Service = never>(
   handler: Handler<T>,
 ): Server {
-  function listener(event: MessageEvent<Payload>) {
-    void handle(event.data, handler, event).then((reply) => {
-      if (reply) {
-        event.source!.postMessage(reply)
-      }
+  function listener(event: MessageEvent<RequestPayload>) {
+    void handleAndSendResponse(event.data, handler, event, (response) => {
+      event.source!.postMessage(response)
     })
   }
   self.addEventListener('message', listener)
