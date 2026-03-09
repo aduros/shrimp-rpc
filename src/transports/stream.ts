@@ -1,5 +1,5 @@
 import { type Client, createClient } from '../client'
-import { ResponsePayload } from '../jsonrpc'
+import type { ResponsePayload } from '../jsonrpc'
 import type { Handler, Server } from '../server'
 import { handleAndSendResponse } from '../server'
 import type { Service } from '../service'

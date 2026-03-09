@@ -1,5 +1,5 @@
 import type { Client } from '../client'
-import { RequestPayload } from '../jsonrpc'
+import type { RequestPayload } from '../jsonrpc'
 import type { Handler, Server } from '../server'
 import type { Service } from '../service'
 

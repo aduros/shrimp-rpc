@@ -1,5 +1,11 @@
 import { RPCError } from './error'
-import type { ErrorMessage, RequestMessage, RequestPayload, ResponseMessage, ResponsePayload } from './jsonrpc'
+import type {
+  ErrorMessage,
+  RequestMessage,
+  RequestPayload,
+  ResponseMessage,
+  ResponsePayload,
+} from './jsonrpc'
 import { jsonrpc } from './jsonrpc'
 import type { Service } from './service'
 
@@ -92,7 +98,9 @@ export async function handle<T extends Service, Context>(
     },
   }
 
-  async function onMessage(message: RequestMessage): Promise<ResponseMessage | undefined> {
+  async function onMessage(
+    message: RequestMessage,
+  ): Promise<ResponseMessage | undefined> {
     if (message?.jsonrpc !== '2.0') {
       return invalidRequest
     }
@@ -126,7 +134,7 @@ export async function handle<T extends Service, Context>(
         }
       } catch (error) {
         if (message.id != null) {
-          return toErrorMessage(message.id, error);
+          return toErrorMessage(message.id, error)
         }
       }
     }
@@ -172,17 +180,17 @@ export async function handleAndSendResponse<T extends Service, Context>(
   context: Context,
   sendResponse: (response: ResponsePayload) => void,
 ) {
-  const response = await handle(request, handler, context);
+  const response = await handle(request, handler, context)
   if (response) {
     try {
-      sendResponse(response);
+      sendResponse(response)
     } catch (error) {
       // If there was an error during response sending (which may happen if result messages aren't
       // serializable), propagate that error back to clients
       const errorPayload = Array.isArray(response)
-        ? response.map(message => toErrorMessage(message.id, error))
+        ? response.map((message) => toErrorMessage(message.id, error))
         : toErrorMessage(response.id, error)
-      sendResponse(errorPayload);
+      sendResponse(errorPayload)
     }
   }
 }

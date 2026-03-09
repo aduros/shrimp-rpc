@@ -26,10 +26,8 @@ export function createChromeExtensionClient<T extends Service = never>(
 ): Client<T> {
   return createClient((receive) => ({
     async send(request) {
-      const response: ResponsePayload | undefined = await chrome.runtime.sendMessage(
-        extensionId,
-        request,
-      )
+      const response: ResponsePayload | undefined =
+        await chrome.runtime.sendMessage(extensionId, request)
       if (response) {
         receive(response)
       }
@@ -61,7 +59,8 @@ export function createChromeExtensionContentScriptClient<
 >(tabId: number): Client<T> {
   return createClient((receive) => ({
     async send(request) {
-      const response: ResponsePayload | undefined = await chrome.tabs.sendMessage(tabId, request)
+      const response: ResponsePayload | undefined =
+        await chrome.tabs.sendMessage(tabId, request)
       if (response) {
         receive(response)
       }

@@ -1,5 +1,10 @@
 import { RPCError } from './error'
-import type { RequestMessage, RequestPayload, ResponseMessage, ResponsePayload } from './jsonrpc'
+import type {
+  RequestMessage,
+  RequestPayload,
+  ResponseMessage,
+  ResponsePayload,
+} from './jsonrpc'
 import { jsonrpc } from './jsonrpc'
 import type { Service } from './service'
 

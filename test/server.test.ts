@@ -587,7 +587,7 @@ describe('handleAndSendResponse', () => {
       error: {
         code: 0,
         message: 'Something horrible happened',
-      }
+      },
     })
   })
 })
