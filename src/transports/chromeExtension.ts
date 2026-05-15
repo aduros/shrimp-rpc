@@ -91,13 +91,13 @@ export function createChromeExtensionContentScriptClient<
  * ```
  */
 export function createChromeExtensionServer<T extends Service = never>(
-  onMessage: chrome.runtime.ExtensionMessageEvent,
+  onMessage: typeof chrome.runtime.onMessage,
   handler: Handler<T> | ((sender: chrome.runtime.MessageSender) => Handler<T>),
 ): Server {
   function listener(
     request: RequestPayload,
     sender: chrome.runtime.MessageSender,
-    sendResponse: (response: ResponsePayload | undefined) => void,
+    sendResponse: (response?: ResponsePayload) => void,
   ) {
     void handle(request, handler, sender).then(sendResponse)
     return true
