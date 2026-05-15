@@ -105,6 +105,10 @@ export function createClient<T extends Service>(
   >()
 
   function onMessage(message: ResponseMessage) {
+    if (message?.jsonrpc !== '2.0') {
+      return // Bail if the server sent us a malformed message
+    }
+
     if ('result' in message) {
       const id = message.id
       const result = message.result
